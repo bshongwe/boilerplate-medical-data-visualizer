@@ -4,57 +4,65 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Import data
-df = None
+df = pd.read_csv('medical_examination.csv')
 
 # Add 'overweight' column
-df['overweight'] = None
+def add_overweight_column(df):
+  df['overweight'] = (df['weight'] / (df['height'] / 100) ** 2) > 25
+  return df
 
-# Normalize data by making 0 always good and 1 always bad. If the value of 'cholesterol' or 'gluc' is 1, make the value 0. If the value is more than 1, make the value 1.
+df = add_overweight_column(df)
 
+# Normalize data by making 0 always good and 1 always bad
+def normalize_data(df):
+  df['cholesterol'] = df['cholesterol'].map({1: 0, 2: 1, 3: 1})
+  df['gluc'] = df['gluc'].map({1: 0, 2: 1, 3: 1})
+  return df
 
-# Draw Categorical Plot
-def draw_cat_plot():
-    # Create DataFrame for cat plot using `pd.melt` using just the values from 'cholesterol', 'gluc', 'smoke', 'alco', 'active', and 'overweight'.
-    df_cat = None
+df = normalize_data(df)
 
+# Convert data into long format
+def convert_to_long_format(df):
+  df_long = pd.melt(df, id_vars='cardio', value_vars=['cholesterol', 'gluc', 'alco', 'active', 'smoke', 'overweight'])
+  return df_long
 
-    # Group and reformat the data to split it by 'cardio'. Show the counts of each feature. You will have to rename one of the columns for the catplot to work correctly.
-    df_cat = None
-    
+df_long = convert_to_long_format(df)
 
-    # Draw the catplot with 'sns.catplot()'
+# Create chart of value counts of categorical features
+def draw_cat_plot(df_long):
+  fig, axes = plt.subplots(2, 1, figsize=(10, 6))
+  sns.catplot(x='variable', y='value_counts', col='cardio', hue='value', data=df_long, ax=axes[0])
+  sns.catplot(x='variable', y='value_counts', col='cardio', hue='value', data=df_long, ax=axes[1])
+  plt.subplots_adjust(top=0.9)
+  fig.suptitle('Value Counts of Categorical Features by Cardio')
+  fig.savefig('catplot.png')
 
+draw_cat_plot(df_long)
 
+# Clean the data
+def clean_data(df):
+  df = df[(df['ap_lo'] <= df['ap_hi'])]
+  df = df[(df['height'] >= df['height'].quantile(0.025))]
+  df = df[(df['height'] <= df['height'].quantile(0.975))]
+  df = df[(df['weight'] >= df['weight'].quantile(0.025))]
+  df = df[(df['weight'] <= df['weight'].quantile(0.975))]
+  return df
 
-    # Get the figure for the output
-    fig = None
+df = clean_data(df)
 
+# Create a correlation matrix
+def create_correlation_matrix(df):
+  corr = df.corr()
+  return corr
 
-    # Do not modify the next two lines
-    fig.savefig('catplot.png')
-    return fig
+corr = create_correlation_matrix(df)
 
+# Plot the correlation matrix as a heatmap
+def draw_heatmap(corr):
+  mask = np.triu(np.ones_like(corr, dtype=bool))
+  fig, ax = plt.subplots(figsize=(10, 10))
+  sns.heatmap(corr, mask=mask, annot=True, fmt='.2f', ax=ax)
+  plt.title('Correlation Matrix')
+  plt.savefig('heatmap.png')
 
-# Draw Heat Map
-def draw_heat_map():
-    # Clean the data
-    df_heat = None
-
-    # Calculate the correlation matrix
-    corr = None
-
-    # Generate a mask for the upper triangle
-    mask = None
-
-
-
-    # Set up the matplotlib figure
-    fig, ax = None
-
-    # Draw the heatmap with 'sns.heatmap()'
-
-
-
-    # Do not modify the next two lines
-    fig.savefig('heatmap.png')
-    return fig
+draw_heatmap(corr)
